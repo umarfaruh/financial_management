@@ -1,9 +1,5 @@
 <html lang="ru">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-
- <body>
+  <body>
   <!-- 🔹 Навигационная панель -->
   <div class="navbar">
     <a href="http://127.0.0.1:5500/index.html">Доходы и расходы</a>
@@ -21,8 +17,8 @@
       flex-wrap: wrap;
       gap: 30px;
       background-color: #1e3a8a;
-      padding: 24px;
-      border-radius: 22px;
+      padding: 20px;
+      border-radius: 0px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       margin: 0px;
     }
@@ -56,193 +52,142 @@
       }
     }
   </style>
-</body>
-  <title>Таблица бюджета</title>
-  <style>
-    :root{--bg:#f6f8fb;--card:#ffffff;--accent:#0b74da;--muted:#6b7280}
-    body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); margin:0; padding:24px}
-    .container{max-width:980px;margin:0 auto}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-    h1{font-size:20px;margin:0}
-    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(11,20,40,0.06)}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{padding:10px 8px;text-align:left;border-bottom:1px solid #eef2f7}
-    th{font-size:13px;color:var(--muted);font-weight:600}
-    td input[type="number"], td input[type="text"], select{width:100%;border:1px solid #e6eef8;padding:8px;border-radius:6px}
-    .actions{display:flex;gap:8px}
-    button{background:var(--accent);border:0;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer}
-    button.ghost{background:transparent;color:var(--accent);border:1px solid #dbe8fb}
-    .muted{color:var(--muted);font-size:13px}
-    .totals{display:flex;gap:12px;align-items:center;margin-top:12px}
-    .pill{background:#f3f7ff;padding:8px 12px;border-radius:999px;font-weight:600}
-    .percent{font-size:13px;color:var(--muted)}
-    .controls{display:flex;gap:8px;align-items:center}
-    @media (max-width:600px){th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4){display:none}}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>Рассходы, правильно рассчитывай свои траты</h1>
-      <div class="controls">
-        <button id="addRow">Добавить строку</button>
-        <button id="save" class="ghost">Сохранить</button>
-        <button id="clear" class="ghost">Очистить</button>
-        <button id="export" class="ghost">Экспорт CSV</button>
-      </div>
-    </header>
+  </body>
+ 
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Налоговый калькулятор</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="bg-gray-50">
+    <div id="root"></div>
 
-    <section class="card">
-      <label class="muted">Ежемесячный доход (₸)</label>
-      <input id="income" type="number" value="напиши" style="max-width:220px;margin-top:6px" />
+    <script type="text/babel">
+      function TaxCalculator() {
+        const [income, setIncome] = React.useState(500000);
+        const [incomePeriod, setIncomePeriod] = React.useState("annual");
+        const [deductions, setDeductions] = React.useState(0);
+        const [useProgressive, setUseProgressive] = React.useState(false);
+        const [flatRate, setFlatRate] = React.useState(13);
+        const [brackets, setBrackets] = React.useState([
+          { upTo: 100000, rate: 10 },
+          { upTo: 300000, rate: 20 },
+          { upTo: null, rate: 30 },
+        ]);
+        const [history, setHistory] = React.useState([]);
 
-      <table id="budgetTable" aria-label="Таблица бюджета">
-        <thead>
-          <tr>
-            <th style="width:36%">Категория</th>
-            <th style="width:20%">Тип</th>
-            <th style="width:18%">Сумма (₸)</th>
-            <th style="width:16%">Процент</th>
-            <th style="width:10%">Действие</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- rows inserted by JS -->
-        </tbody>
-      </table>
+        React.useEffect(() => {
+          const saved = localStorage.getItem('tax_calc_html');
+          if (saved) {
+            const p = JSON.parse(saved);
+            setIncome(p.income || 0);
+            setIncomePeriod(p.incomePeriod || 'annual');
+            setDeductions(p.deductions || 0);
+            setUseProgressive(p.useProgressive || false);
+            setFlatRate(p.flatRate || 13);
+            setBrackets(p.brackets || []);
+            setHistory(p.history || []);
+          }
+        }, []);
 
-      <div class="totals">
-        <div class="pill">Всего: <span id="total">0</span> ₸</div>
-        <div class="pill">Остаток: <span id="left">0</span> ₸</div>
-        <div class="percent">Рекомендация 50/30/20 — Необходимые/Желания/Накопления</div>
-      </div>
+        React.useEffect(() => {
+          localStorage.setItem('tax_calc_html', JSON.stringify({ income, incomePeriod, deductions, useProgressive, flatRate, brackets, history }));
+        }, [income, incomePeriod, deductions, useProgressive, flatRate, brackets, history]);
 
-      <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
-        <button id="applySample" class="ghost">Добавить примеры</button>
-        <button id="calcPercent" class="ghost">Обновить проценты</button>
-        <button id="print" class="ghost">Распечатать</button>
-      </div>
+        const toAnnual = (v, p) => (p === 'monthly' ? v * 12 : v);
+        const format = (v) => v.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
 
-      <p class="muted" style="margin-top:12px">Подсказка: заполни категории, укажи тип (Необходимое / Желание / Накопления) — система посчитает итог и процент от дохода. Данные сохраняются в браузере.</p>
-    </section>
-  </div>
+        function calc() {
+          const annualIncome = toAnnual(+income, incomePeriod);
+          const taxable = Math.max(0, annualIncome - +deductions);
+          let tax = 0;
+          if (!useProgressive) {
+            tax = taxable * flatRate / 100;
+          } else {
+            let remain = taxable, lower = 0;
+            for (const b of brackets) {
+              const upTo = b.upTo == null ? Infinity : b.upTo;
+              const part = Math.min(remain, upTo - lower);
+              if (part > 0) tax += part * b.rate / 100;
+              remain -= part;
+              lower = upTo;
+              if (remain <= 0) break;
+            }
+          }
+          const net = annualIncome - tax;
+          return { annualIncome, taxable, tax, net, netMonthly: net/12 };
+        }
 
-  <script>
-    const tbody = document.querySelector('#budgetTable tbody');
-    const incomeInput = document.getElementById('income');
-    const totalEl = document.getElementById('total');
-    const leftEl = document.getElementById('left');
+        const res = calc();
 
-    function createRow(item={category:'',type:'Необходимые',amount:0}){
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><input class="cat" type="text" value="${item.category}" placeholder="Например: Аренда" /></td>
-        <td>
-          <select class="type">
-            <option${item.type==='Употребление'? ' selected':''}>Необходимые</option>
-            <option${item.type==='Цель'? ' selected':''}>Желания</option>
-            <option${item.type==='Накопления'? ' selected':''}>Накопления</option>
-          </select>
-        </td>
-        <td><input class="amt" type="number" value="${item.amount || 0}" min="0" /></td>
-        <td class="pct">0%</td>
-        <td><button class="del ghost">Удалить</button></td>
-      `;
+        return (
+          <div className="max-w-3xl mx-auto p-6">
+             <br></br>
+            <h1 className="text-2xl font-bold mb-4">Налоговый калькулятор</h1>
 
-      tr.querySelector('.del').addEventListener('click', ()=>{tr.remove(); recalc();});
-      tr.querySelectorAll('input, select').forEach(el=>el.addEventListener('input', recalc));
-      tbody.appendChild(tr);
-      return tr;
-    }
+            <div className="space-y-3 bg-white p-4 rounded shadow">
+              <div>
+                <label>Доход:</label>
+                <div className="flex gap-2 mt-1">
+                  <input type="number" value={income} onChange={e=>setIncome(+e.target.value)} className="border p-2 rounded flex-1"/>
+                  <select value={incomePeriod} onChange={e=>setIncomePeriod(e.target.value)} className="border p-2 rounded">
+                    <option value="annual">Годовой</option>
+                    <option value="monthly">Месячный</option>
+                  </select>
+                </div>
+              </div>
 
-    function recalc(){
-      const income = Number(incomeInput.value) || 0;
-      const rows = Array.from(tbody.querySelectorAll('tr'));
-      let sum = 0;
-      rows.forEach(r=>{ const a = Number(r.querySelector('.amt').value)||0; sum+=a});
-      totalEl.textContent = sum.toLocaleString('ru-RU');
-      leftEl.textContent = (income - sum).toLocaleString('ru-RU');
+              <div>
+                <label>Вычеты:</label>
+                <input type="number" value={deductions} onChange={e=>setDeductions(+e.target.value)} className="border p-2 rounded w-full mt-1"/>
+              </div>
 
-      rows.forEach(r=>{
-        const a = Number(r.querySelector('.amt').value)||0;
-        const pct = income>0? Math.round((a/income)*1000)/10 : 0; // one decimal
-        r.querySelector('.pct').textContent = pct + '%';
-      });
+              <div className="flex items-center gap-2">
+                <input type="checkbox" checked={useProgressive} onChange={e=>setUseProgressive(e.target.checked)}/>
+                <label>Прогрессивная шкала</label>
+              </div>
 
-      saveToLocal();
-    }
+              {!useProgressive && (
+                <div>
+                  <label>Плоская ставка (%)</label>
+                  <input type="number" value={flatRate} onChange={e=>setFlatRate(+e.target.value)} className="border p-2 rounded w-full mt-1"/>
+                </div>
+              )}
 
-    function saveToLocal(){
-      const income = Number(incomeInput.value)||0;
-      const rows = Array.from(tbody.querySelectorAll('tr')).map(r=>({
-        category:r.querySelector('.cat').value,
-        type:r.querySelector('.type').value,
-        amount:Number(r.querySelector('.amt').value)||0
-      }));
-      localStorage.setItem('budget_v1', JSON.stringify({income,rows}));
-    }
+              {useProgressive && (
+                <div className="space-y-2">
+                  {brackets.map((b, i)=>(
+                    <div key={i} className="flex gap-2">
+                      <input type="number" placeholder="до" value={b.upTo ?? ''} onChange={e=>{
+                        const v=e.target.value===''?null:+e.target.value;
+                        setBrackets(brackets.map((x,j)=>j===i?{...x,upTo:v}:x));
+                      }} className="border p-2 rounded flex-1"/>
+                      <input type="number" placeholder="%" value={b.rate} onChange={e=>setBrackets(brackets.map((x,j)=>j===i?{...x,rate:+e.target.value}:x))} className="border p-2 rounded w-24"/>
+                    </div>
+                  ))}
+                  <button onClick={()=>setBrackets([...brackets,{upTo:null,rate:0}])} className="bg-blue-500 text-white px-3 py-1 rounded">Добавить</button>
+                </div>
+              )}
 
-    function loadFromLocal(){
-      const raw = localStorage.getItem('budget_v1');
-      if(!raw) return false;
-      try{
-        const data = JSON.parse(raw);
-        incomeInput.value = data.income || 0;
-        tbody.innerHTML = '';
-        (data.rows||[]).forEach(r=>createRow(r));
-        recalc();
-        return true;
-      }catch(e){console.warn(e);}
-      return false;
-    }
+              <div className="p-4 bg-gray-50 rounded mt-4">
+                <div>Годовой доход: <b>{format(res.annualIncome)}</b></div>
+                <div>Облагаемый: <b>{format(res.taxable)}</b></div>
+                <div>Налог: <b className="text-red-600">{format(res.tax)}</b></div>
+                <div>Чистый годовой: <b>{format(res.net)}</b></div>
+                <div>Чистый в месяц: <b>{format(res.netMonthly)}</b></div>
+              </div>
+            </div>
+          </div>
+        );
+      }
 
-    document.getElementById('addRow').addEventListener('click', ()=>{createRow(); recalc();});
-    document.getElementById('save').addEventListener('click', ()=>{saveToLocal(); alert('Сохранено в браузере.');});
-    document.getElementById('clear').addEventListener('click', ()=>{ if(confirm('Очистить все строки?')){tbody.innerHTML=''; recalc(); localStorage.removeItem('budget_v1');}});
-    document.getElementById('applySample').addEventListener('click', ()=>{
-      const sample = [
-        {category:'Аренда',type:'Необходимые',amount:30000},
-        {category:'Продукты',type:'Необходимые',amount:20000},
-        {category:'Транспорт',type:'Необходимые',amount:4000},
-        {category:'Кафе и развлечения',type:'Желания',amount:5000},
-        {category:'Накопления',type:'Накопления',amount:10000}
-      ];
-      tbody.innerHTML=''; sample.forEach(s=>createRow(s)); recalc();
-    });
-
-    document.getElementById('calcPercent').addEventListener('click', recalc);
-    document.getElementById('export').addEventListener('click', ()=>{
-      const income = Number(incomeInput.value)||0;
-      const rows = Array.from(tbody.querySelectorAll('tr')).map(r=>({
-        category:r.querySelector('.cat').value,
-        type:r.querySelector('.type').value,
-        amount:Number(r.querySelector('.amt').value)||0,
-        percent: r.querySelector('.pct').textContent
-      }));
-      let csv = 'Категория,Тип,Сумма,Процент\n';
-      rows.forEach(r=>{csv += `"${r.category}","${r.type}",${r.amount},${r.percent}\n`;});
-      csv += `\nДоход:,${income}\nВсего:,${Number(totalEl.textContent.replace(/\s/g,''))}\nОстаток: ,${Number(leftEl.textContent.replace(/\s/g,''))}`;
-      const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'budget.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    });
-
-    document.getElementById('print').addEventListener('click', ()=>{window.print();});
-
-    incomeInput.addEventListener('input', recalc);
-
-    // initial
-    if(!loadFromLocal()){
-      // default rows
-      createRow({category: value="Аренда", type:'Необходимые',amount:30000});
-      createRow({category:'Продукты',type:'Необходимые',amount:20000});
-      createRow({category:'Транспорт',type:'Необходимые',amount:4000});
-      createRow({category:'Развлечения',type:'Желания',amount:5000});
-      createRow({category:'Накопления',type:'Накопления',amount:10000});
-      recalc();
-    }
-  </script>
-
-</body>
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<TaxCalculator/>);
+    </script>
+  </body>
 </html>
 
