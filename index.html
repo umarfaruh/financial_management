@@ -3,13 +3,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Налоговый калькулятор</title>
-<meta name="google-site-verification" content="28908QYytl5VqHpKiFoXl3oY_W6LMl2bxNexzMY3yZA" />
+    <meta name="google-site-verification" content="28908QYytl5VqHpKiFoXl3oY_W6LMl2bxNexzMY3yZA" />
     <style>
-  body {
-    background: #f3f6fb;
-    font-family: "Segoe UI", sans-serif;
-    margin: 0;
-    padding: 0;
+    body {
+        background: #f3f6fb;
+        font-family: "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 0;
   }
 
   .tabs-wrap {
@@ -78,7 +78,7 @@
   }
 
   .tab a:hover {
-    background: #050506;
+    background: #2971ff;
   }
 
   .tabs-btn {
@@ -101,7 +101,7 @@
   }
 
   .tabs-btn:hover {
-    background: #050506;
+    background: #2971ff;
     transform: translateY(-50%) scale(1.05);
   }
 
@@ -224,140 +224,116 @@
 })();
 </script>
 
-
-
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  function TaxCalculator() {
+    const [income, setIncome] = React.useState(500000);
+    const [incomePeriod, setIncomePeriod] = React.useState("annual");
+    const [deductions, setDeductions] = React.useState(0);
+    const [useProgressive, setUseProgressive] = React.useState(false);
+    const [flatRate, setFlatRate] = React.useState(13);
+    const [brackets, setBrackets] = React.useState([
+      { upTo: 100000, rate: 10 },
+      { upTo: 300000, rate: 20 },
+      { upTo: null, rate: 30 },
+    ]);
 
-  </head>
-  <body class="bg-gray-50">
-    <div id="root"></div>
+    const toAnnual = (v, p) => (p === "monthly" ? v * 12 : v);
+    const format = (v) => v.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
 
-    <script type="text/babel">
-      function TaxCalculator() {
-        const [income, setIncome] = React.useState(500000);
-        const [incomePeriod, setIncomePeriod] = React.useState("annual");
-        const [deductions, setDeductions] = React.useState(0);
-        const [useProgressive, setUseProgressive] = React.useState(false);
-        const [flatRate, setFlatRate] = React.useState(13);
-        const [brackets, setBrackets] = React.useState([
-          { upTo: 100000, rate: 10 },
-          { upTo: 300000, rate: 20 },
-          { upTo: null, rate: 30 },
-        ]);
-        const [history, setHistory] = React.useState([]);
-
-        React.useEffect(() => {
-          const saved = localStorage.getItem('tax_calc_html');
-          if (saved) {
-            const p = JSON.parse(saved);
-            setIncome(p.income || 0);
-            setIncomePeriod(p.incomePeriod || 'annual');
-            setDeductions(p.deductions || 0);
-            setUseProgressive(p.useProgressive || false);
-            setFlatRate(p.flatRate || 13);
-            setBrackets(p.brackets || []);
-            setHistory(p.history || []);
-          }
-        }, []);
-
-        React.useEffect(() => {
-          localStorage.setItem('tax_calc_html', JSON.stringify({ income, incomePeriod, deductions, useProgressive, flatRate, brackets, history }));
-        }, [income, incomePeriod, deductions, useProgressive, flatRate, brackets, history]);
-
-        const toAnnual = (v, p) => (p === 'monthly' ? v * 12 : v);
-        const format = (v) => v.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
-
-        function calc() {
-          const annualIncome = toAnnual(+income, incomePeriod);
-          const taxable = Math.max(0, annualIncome - +deductions);
-          let tax = 0;
-          if (!useProgressive) {
-            tax = taxable * flatRate / 100;
-          } else {
-            let remain = taxable, lower = 0;
-            for (const b of brackets) {
-              const upTo = b.upTo == null ? Infinity : b.upTo;
-              const part = Math.min(remain, upTo - lower);
-              if (part > 0) tax += part * b.rate / 100;
-              remain -= part;
-              lower = upTo;
-              if (remain <= 0) break;
-            }
-          }
-          const net = annualIncome - tax;
-          return { annualIncome, taxable, tax, net, netMonthly: net/12 };
+    function calc() {
+      const annualIncome = toAnnual(+income, incomePeriod);
+      const taxable = Math.max(0, annualIncome - +deductions);
+      let tax = 0;
+      if (!useProgressive) {
+        tax = taxable * flatRate / 100;
+      } else {
+        let remain = taxable, lower = 0;
+        for (const b of brackets) {
+          const upTo = b.upTo == null ? Infinity : b.upTo;
+          const part = Math.min(remain, upTo - lower);
+          if (part > 0) tax += part * b.rate / 100;
+          remain -= part;
+          lower = upTo;
+          if (remain <= 0) break;
         }
+      }
+      const net = annualIncome - tax;
+      return { annualIncome, taxable, tax, net, netMonthly: net / 12 };
+    }
 
-        const res = calc();
+    const res = calc();
 
-        return (
-          <div className="max-w-3xl mx-auto p-6">
-             <br></br>
-            <h1 className="text-2xl font-bold mb-4">Налоговый калькулятор</h1>
+    return (
+      <div className="max-w-5xl mx-auto p-8 bg-white rounded-xl shadow-lg mt-10 mb-10">
+        <h1 className="text-3xl font-bold mb-6 text-center text-purple-800">Налоговый калькулятор</h1>
 
-            <div className="space-y-3 bg-white p-4 rounded shadow">
-              <div>
-                <label>Доход:</label>
-                <div className="flex gap-2 mt-1">
-                  <input type="number" value={income} onChange={e=>setIncome(+e.target.value)} className="border p-2 rounded flex-1"/>
-                  <select value={incomePeriod} onChange={e=>setIncomePeriod(e.target.value)} className="border p-2 rounded">
-                    <option value="annual">Годовой</option>
-                    <option value="monthly">Месячный</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label>Вычеты:</label>
-                <input type="number" value={deductions} onChange={e=>setDeductions(+e.target.value)} className="border p-2 rounded w-full mt-1"/>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input type="checkbox" checked={useProgressive} onChange={e=>setUseProgressive(e.target.checked)}/>
-                <label>Прогрессивная шкала</label>
-              </div>
-
-              {!useProgressive && (
-                <div>
-                  <label>Плоская ставка (%)</label>
-                  <input type="number" value={flatRate} onChange={e=>setFlatRate(+e.target.value)} className="border p-2 rounded w-full mt-1"/>
-                </div>
-              )}
-
-              {useProgressive && (
-                <div className="space-y-2">
-                  {brackets.map((b, i)=>(
-                    <div key={i} className="flex gap-2">
-                      <input type="number" placeholder="до" value={b.upTo ?? ''} onChange={e=>{
-                        const v=e.target.value===''?null:+e.target.value;
-                        setBrackets(brackets.map((x,j)=>j===i?{...x,upTo:v}:x));
-                      }} className="border p-2 rounded flex-1"/>
-                      <input type="number" placeholder="%" value={b.rate} onChange={e=>setBrackets(brackets.map((x,j)=>j===i?{...x,rate:+e.target.value}:x))} className="border p-2 rounded w-24"/>
-                    </div>
-                  ))}
-                  <button onClick={()=>setBrackets([...brackets,{upTo:null,rate:0}])} className="bg-blue-500 text-white px-3 py-1 rounded">Добавить</button>
-                </div>
-              )}
-
-              <div className="p-4 bg-gray-50 rounded mt-4">
-                <div>Годовой доход: <b>{format(res.annualIncome)}</b></div>
-                <div>Облагаемый: <b>{format(res.taxable)}</b></div>
-                <div>Налог: <b className="text-red-600">{format(res.tax)}</b></div>
-                <div>Чистый годовой: <b>{format(res.net)}</b></div>
-                <div>Чистый в месяц: <b>{format(res.netMonthly)}</b></div>
-              </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <label className="font-semibold">Доход:</label>
+            <div className="flex gap-2 mt-1">
+              <input type="number" value={income} onChange={e => setIncome(+e.target.value)} className="border p-2 rounded flex-1" />
+              <select value={incomePeriod} onChange={e => setIncomePeriod(e.target.value)} className="border p-2 rounded">
+                <option value="annual">Годовой</option>
+                <option value="monthly">Месячный</option>
+              </select>
             </div>
           </div>
-        );
-      }
 
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<TaxCalculator/>);
-    </script>
-  </body>
+          <div>
+            <label className="font-semibold">Вычеты:</label>
+            <input type="number" value={deductions} onChange={e => setDeductions(+e.target.value)} className="border p-2 rounded w-full mt-1" />
+          </div>
+
+          <div className="col-span-2 flex items-center gap-2 mt-4">
+            <input type="checkbox" checked={useProgressive} onChange={e => setUseProgressive(e.target.checked)} />
+            <label>Прогрессивная шкала</label>
+          </div>
+
+          {!useProgressive && (
+            <div className="col-span-2">
+              <label className="font-semibold">Плоская ставка (%)</label>
+              <input type="number" value={flatRate} onChange={e => setFlatRate(+e.target.value)} className="border p-2 rounded w-full mt-1" />
+            </div>
+          )}
+
+          {useProgressive && (
+            <div className="col-span-2 space-y-2">
+              {brackets.map((b, i) => (
+                <div key={i} className="flex gap-2">
+                  <input type="number" placeholder="до" value={b.upTo ?? ""} onChange={e => {
+                    const v = e.target.value === "" ? null : +e.target.value;
+                    setBrackets(brackets.map((x, j) => j === i ? { ...x, upTo: v } : x));
+                  }} className="border p-2 rounded flex-1" />
+                  <input type="number" placeholder="%" value={b.rate} onChange={e => setBrackets(brackets.map((x, j) => j === i ? { ...x, rate: +e.target.value } : x))} className="border p-2 rounded w-24" />
+                </div>
+              ))}
+              <button onClick={() => setBrackets([...brackets, { upTo: null, rate: 0 }])} className="bg-blue-500 text-white px-3 py-1 rounded">Добавить</button>
+            </div>
+          )}
+        </div>
+
+        <div className="p-5 bg-gray-50 rounded mt-8 text-lg leading-relaxed">
+          <div>Годовой доход: <b>{format(res.annualIncome)}</b></div>
+          <div>Облагаемый доход: <b>{format(res.taxable)}</b></div>
+          <div>Налог: <b className="text-red-600">{format(res.tax)}</b></div>
+          <div>Чистый годовой доход: <b>{format(res.net)}</b></div>
+          <div>Чистый месячный доход: <b>{format(res.netMonthly)}</b></div>
+        </div>
+      </div>
+    );
+  }
+
+  const root = ReactDOM.createRoot(document.getElementById("root"));
+  root.render(<TaxCalculator />);
+</script>
+```
+</body>
 </html>
 
